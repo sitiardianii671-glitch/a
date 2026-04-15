@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(#cfe8ff, #e8f1ff);
+    display: flex;
+    justify-content: center;
+    padding-top: 30px;
+}
+
+.quiz-container {
+    background: #ffffff;
+    width: 90%;
+    max-width: 420px;
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    text-align: center;
+}
+
+.welcome-title {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #003c8f;
+}
+
+.welcome-sub {
+    font-size: 1.2em;
+    color: #1e4fa8;
+    margin-bottom: 20px;
+}
+
+#name-input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #b3c7ff;
+    font-size: 1.1em;
+}
+
+#save-name-btn {
+    background: #1e4fa8;
+    color: white;
+    padding: 12px;
+    font-size: 1.1em;
+    width: 100%;
+    border-radius: 10px;
+    border: none;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+#player-list {
+    background: #f0f4ff;
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 15px;
+    text-align: left;
+}
+
+.player-item {
+    background: #d8e4ff;
+    padding: 8px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+}
+
+#clear-players-btn {
+    background: #e53935;
+    color: white;
+    padding: 10px;
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+#score-display {
+    font-size: 1.2em;
+    color: #003c8f;
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.question {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #0b2c61;
+    margin-bottom: 20px;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.option-button {
+    padding: 15px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 12px;
+    background: #4b6cb7;
+    color: white;
+    cursor: pointer;
+}
+
+.correct { background: #4CAF50 !important; }
+.wrong { background: #e53935 !important; }
+
+#feedback {
+    margin-top: 18px;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="quiz-container">
+
+<!-- INPUT NAMA -->
+<div id="name-screen">
+    <div class="welcome-title">SELAMAT DATANG</div>
+    <div class="welcome-sub">Kuis Matematika SMA 📘</div>
+
+    <input id="name-input" type="text" placeholder="Nama kamu...">
+    <button id="save-name-btn">Simpan & Mulai</button>
+
+    <h3>Daftar Pemain:</h3>
+    <div id="player-list"></div>
+
+    <!-- TOMBOL HAPUS RIWAYAT -->
+    <button id="clear-players-btn">🗑 Hapus Riwayat Pemain</button>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz-screen" style="display:none;">
+    <div id="score-display">Skor: 0 / 10</div>
+    <div class="question" id="question"></div>
+
+    <div class="options-grid">
+        <button class="option-button" id="btn1"></button>
+        <button class="option-button" id="btn2"></button>
+        <button class="option-button" id="btn3"></button>
+        <button class="option-button" id="btn4"></button>
+    </div>
+
+    <div id="feedback"></div>
+</div>
+
+</div>
+
+<script>
+// ================= NAMA PEMAIN =================
+function loadPlayers() {
+    let players = JSON.parse(localStorage.getItem("players")) || [];
+    let list = document.getElementById("player-list");
+    list.innerHTML = "";
+    players.forEach(p => {
+        let d = document.createElement("div");
+        d.className = "player-item";
+        d.textContent = "• " + p;
+        list.appendChild(d);
+    });
+}
+
+document.getElementById("save-name-btn").onclick = () => {
+    let name = document.getElementById("name-input").value.trim();
+    if (!name) return alert("Nama wajib diisi");
+
+    let players = JSON.parse(localStorage.getItem("players")) || [];
+    players.push(name);
+    localStorage.setItem("players", JSON.stringify(players));
+    loadPlayers();
+
+    document.getElementById("name-screen").style.display = "none";
+    document.getElementById("quiz-screen").style.display = "block";
+    loadQuestion();
+};
+
+document.getElementById("clear-players-btn").onclick = () => {
+    if (confirm("Yakin ingin menghapus semua riwayat pemain?")) {
+        localStorage.removeItem("players");
+        loadPlayers();
+    }
+};
+
+loadPlayers();
+
+// ================= SOAL =================
+const questions = [
+    { q: "Jika 2x + 5 = 17, maka x = …", options: ["4","5","6","7"], answer: "6" },
+    { q: "Hasil dari (x + 3)(x − 2) adalah …", options: ["x² + x − 6","x² − x − 6","x² + 5x − 6","x² − 5x + 6"], answer: "x² + x − 6" },
+    { q: "Nilai dari 3² + 4² adalah …", options: ["25","49","12","7"], answer: "25" },
+    { q: "Akar dari x² = 16 adalah …", options: ["4","-4","±4","8"], answer: "±4" },
+    { q: "Jika f(x)=2x+1, maka f(3)= …", options: ["5","6","7","8"], answer: "7" },
+    { q: "Gradien y = 5x − 2 adalah …", options: ["5","-5","2","-2"], answer: "5" },
+    { q: "2³ × 2² = …", options: ["8","16","32","64"], answer: "32" },
+    { q: "√50 = …", options: ["5√2","10√5","25√2","2√25"], answer: "5√2" },
+    { q: "Peluang muncul bilangan genap pada dadu adalah …", options: ["1/6","1/3","1/2","2/3"], answer: "1/2" },
+    { q: "Jumlah sudut segitiga adalah …", options: ["90°","180°","270°","360°"], answer: "180°" }
+];
+
+let index = 0, skor = 0;
+const qText = document.getElementById("question");
+const scoreDisplay = document.getElementById("score-display");
+const feedback = document.getElementById("feedback");
+const btns = ["btn1","btn2","btn3","btn4"].map(id=>document.getElementById(id));
+
+function loadQuestion() {
+    feedback.textContent = "";
+    let q = questions[index];
+    qText.textContent = q.q;
+    scoreDisplay.textContent = Skor: ${skor} / ${questions.length};
+
+    let ops = [...q.options].sort(()=>Math.random()-0.5);
+    btns.forEach((b,i)=>{
+        b.textContent = ops[i];
+        b.onclick = ()=>check(b, q.answer);
+        b.className = "option-button";
+        b.disabled = false;
+    });
+}
+
+function check(btn, answer) {
+    btns.forEach(b=>b.disabled=true);
+    if (btn.textContent === answer) {
+        skor++;
+        btn.classList.add("correct");
+        feedback.textContent = "✅ Benar";
+    } else {
+        btn.classList.add("wrong");
+        feedback.textContent = "❌ Salah";
+        btns.forEach(b=>{
+            if (b.textContent === answer) b.classList.add("correct");
+        });
+    }
+
+    setTimeout(()=>{
+        index++;
+        if (index < questions.length) loadQuestion();
+        else {
+            qText.textContent = "🎉 Kuis Selesai";
+            scoreDisplay.textContent = "";
+            feedback.textContent = Skor akhir: ${skor} / ${questions.length};
+            btns.forEach(b=>b.style.display="none");
+        }
+    }, 900);
+}
+</script>
+
+</body>
+</html>
